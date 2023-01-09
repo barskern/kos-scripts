@@ -1,70 +1,73 @@
-KSP_MAIN_DIR := ~/Library/Application\ Support/Steam/steamapps/common/Kerbal\ Space\ Program
-KSP_SCRIPT_DIR := ${KSP_MAIN_DIR}/Ships/Script
+KSP_MAIN_DIR := C:/Program\ Files\ (x86)/Steam/steamapps/common/Kerbal\ Space\ Program
+KSP_SCRIPT_DIR := $(KSP_MAIN_DIR)/Ships/Script
 
-KOS_SCRIPT_BASEDIR := ~/Projects/kos-scripts
-KOS_SOURCE_DIR := ${KOS_SCRIPT_BASEDIR}/source
-KOS_MINIFY_DIR := ${KOS_SCRIPT_BASEDIR}/minified
-KOS_SCRIPT_DIR := ${KOS_MINIFY_DIR}
+KOS_SOURCE_DIR := source
+KOS_MINIFY_DIR := minified
+
+KOS_KSX_SRCS := $(wildcard $(KOS_SOURCE_DIR)/**/*.ksx) $(wildcard $(KOS_SOURCE_DIR)/**/**/*.ksx)
+KOS_KS_SRCS := $(wildcard $(KOS_SOURCE_DIR)/**/*.ks) $(wildcard $(KOS_SOURCE_DIR)/**/**/*.ks)
+
+KOS_MINIFIED_SRCS := $(patsubst $(KOS_SOURCE_DIR)/%,$(KOS_MINIFY_DIR)/%,$(KOS_KSX_SRCS:.ksx=.ks) $(KOS_KS_SRCS))
+
+KSP_SCRIPTS := $(patsubst $(KOS_MINIFY_DIR)/%,$(KSP_SCRIPT_DIR)/%,$(KOS_MINIFIED_SRCS))
 
 KSX_INCLUDES := -I source/
 
-PYTHON := python3
+default: $(KSP_SCRIPTS)
+	@echo Compiled and uploaded all scripts in source folder
+.PHONY: default
+
+$(KOS_MINIFY_DIR)/%.ks: $(KOS_SOURCE_DIR)/%.ksx
+	@-mkdir "$(@D)"
+	poetry run ksx --include $(KSX_INCLUDES) --single-file $< --output $@
+
+$(KOS_MINIFY_DIR)/%.ks: $(KOS_SOURCE_DIR)/%.ks
+	@-mkdir "$(@D)"
+	poetry run ksx --include $(KSX_INCLUDES) --single-file $< --output $@
+
+$(KSP_SCRIPT_DIR)/%.ks: $(KOS_MINIFY_DIR)/%.ks
+# Cannot use @D due to spaces in KSP_SCRIPT_DIR
+	@-mkdir "$(subst \,,$(KSP_SCRIPT_DIR))/$(dir $(patsubst $(KOS_MINIFY_DIR)/%,%,$<))"
+	copy /y "$(subst /,\,$<)" "$(subst /,\,$@)"
 
 test:
-	@pipenv run pytest
+	poetry run pytest
+.PHONY: test
 
 clean:
-	@cd minified && git clean -fxdq
-
-report-size:
-	@echo "Before minification..."
-	@wc -c source/**/*.{ks,ksx}
-	@echo "\n----\n"
-	@echo "After minification..."
-	@wc -c minified/**/*.ks
-
-report-size-single-file: guard-FILE
-	@echo "Before minification..."
-	@wc -c ./source/${FILE}
-	@echo "\n----\n"
-	@echo "After minification..."
-	@wc -c ./minified/${FILE}
-
-transpile-only-all:
-	@echo "Transpiling all source files, no optimizations..."
-	@${PYTHON} ksx.py --nuke --transpile-only --all-files ${KSX_INCLUDES}
-
-	@make report-size
-	@make link
-
-compile-all:
-	@echo "Compiling all source files..."
-	@${PYTHON} ksx.py --nuke --all-files ${KSX_INCLUDES}
-
-	@make report-size
-	@make link
-
-link:
-	@echo "Linking minified files into Ships/Script..."
-	@ln -sf ${KOS_MINIFY_DIR}/boot ${KSP_SCRIPT_DIR}
-	@ln -sf ${KOS_MINIFY_DIR}/actions ${KSP_SCRIPT_DIR}
-	@ln -sf ${KOS_MINIFY_DIR}/lib ${KSP_SCRIPT_DIR}
+	cd minified && git clean -fxdq
+.PHONY: clean
 
 telnet:
-	@telnet localhost 5410
+	telnet localhost 5410
+.PHONY: telnet
 
-push-action: guard-ACTION guard-TARGET
-	@make link
-	@echo "Pushing ${ACTION} to vessel(s) ${TARGET}..."
-	@cp ${KOS_SCRIPT_DIR}/actions/${ACTION}.ks ${KSP_SCRIPT_DIR}/${TARGET}-update.ks
+ifneq ($(TARGET),)
 
-push-mission: guard-MISSION guard-TARGET
-	@make link
-	@echo "Pushing ${MISSION} to vessel(s) ${TARGET}..."
-	@cp ${KOS_SCRIPT_DIR}/missions/${MISSION}.ks ${KSP_SCRIPT_DIR}/${TARGET}-update.ks
+ifneq ($(MISSION),)
+push-mission: $(KOS_MINIFY_DIR)/missions/$(MISSION).ks
+	@echo Pushing $(MISSION) to vessel(s) $(TARGET)...
+	copy /y "$(subst /,\,$<)" "$(subst /,\,$(subst \,,$(KSP_SCRIPT_DIR))/$(TARGET)-update.ks)"
+else
+push-mission:
+	@echo Missing MISSION variable to run 'push-mission' task
+endif
 
-guard-%:
-	@if [ "${${*}}" = "" ]; then \
-		echo "Required environment variable $* not set"; \
-		exit 1; \
-	fi
+ifneq ($(ACTION),)
+push-action: $(KOS_MINIFY_DIR)/actions/$(ACTION).ks
+	@echo Pushing $(ACTION) to vessel(s) $(TARGET)...
+	copy /y "$(subst /,\,$<)" "$(subst /,\,$(subst \,,$(KSP_SCRIPT_DIR))/$(TARGET)-update.ks)"
+else
+push-action:
+	@echo Missing ACTION variable to run 'push-action' task
+endif
+
+else
+
+push-mission:
+	@echo Missing TARGET variable to run 'push-mission' task
+push-action:
+	@echo Missing TARGET variable to run 'push-action' task
+
+endif
+.PHONY: push-action push-mission

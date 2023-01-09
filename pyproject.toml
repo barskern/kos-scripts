@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "ksx"
+version = "0.1.0"
+description = ""
+authors = [
+    "LeonardMH <maybeillrememberit@gmail.com>",
+    "Ole Martin Ruud <dev@barskern.no>",
+]
+license = "MIT"
+readme = "README.md"
+packages = [
+    {include = "ksx"}
+]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.2.0"
+
+[tool.poetry.scripts]
+ksx = 'ksx:cli'
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

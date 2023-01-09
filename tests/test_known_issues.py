@@ -1,6 +1,4 @@
-# TODO: This should not be necessary, figure out how to get pytest to include
-# the root path in it search path, rather than descending into tests/
-import os; import sys; sys.path.append(os.path.abspath("."))
+import os
 import pytest
 import ksx
 

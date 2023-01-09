@@ -139,12 +139,22 @@ def ksx_expand_import(file_lines, include_files, *args, **kwargs):
                 for l in import_match_re.match(line).group(1).split(',')]
 
     def match_statement_to_include_files(import_string, include_files):
-        # just doing a partial substring match, that's sufficient for my needs
-        # at the moment
+        from pathlib import Path
+
         acc = []
         for imp in import_string:
+            import_path = Path(imp)
             for f in include_files:
-                if imp in f:
+                include_path = Path(f)
+
+                # Check for stem match (without file extenstion) 
+                # or full name match (with file extension)
+                if (
+                    imp in (include_path.stem, include_path.name) 
+                    or include_path.match(str(import_path))
+                    or include_path.match(str(import_path) + '.ksx')
+                    or include_path.match(str(import_path) + '.ks')
+                ):
                     acc.append(f)
                     break
 
@@ -188,12 +198,23 @@ def ksx_expand_from_import(file_lines, include_files, *args, **kwargs):
             return [], []
 
     def match_statement_to_include_files(import_string, include_files):
-        # just doing a partial substring match, that's sufficient for my needs
-        # at the moment
+        from pathlib import Path
+
         acc = []
         for imp in import_string:
+            import_path = Path(imp)
+
             for f in include_files:
-                if imp in f:
+
+                include_path = Path(f)
+                # Check for stem match (without file extenstion) 
+                # or full name match (with file extension)
+                if (
+                    imp in (include_path.stem, include_path.name) 
+                    or include_path.match(str(import_path))
+                    or include_path.match(str(import_path) + '.ksx')
+                    or include_path.match(str(import_path) + '.ks')
+                ):
                     acc.append(f)
                     break
 
@@ -232,7 +253,7 @@ def ksx_expand_from_import(file_lines, include_files, *args, **kwargs):
     for l in file_lines:
         if line_has_ksx_directive(l) and l.split()[1].lower() == "from":
             files, functions = parse_ksx_import_statement(l)
-            files = [match_statement_to_include_files(fp, include_files) for fp in files]
+            files = [match_statement_to_include_files(files, include_files)]
             for func in functions:
                 func_from_files = function_from_files(include_files, func)
                 if func_from_files is None:
@@ -416,6 +437,7 @@ def compile_single_file_lines(file_lines, minifier_actions,
 def compile_single_file(file_path, minifier_actions, **kwargs):
     import os
     import shutil
+    from pathlib import Path
 
     file_path = os.path.abspath(file_path)
     basepath, basename = [f(file_path) for f in (os.path.dirname, os.path.basename)]
@@ -430,9 +452,15 @@ def compile_single_file(file_path, minifier_actions, **kwargs):
 
     # minified files must match directory structure of files in source, ensure
     # directories exist
-    target_dir_rel = kwargs.get('override_target', './minified')
-    dest_dir = os.path.join(target_dir_rel, root_no_source)
-    dest_path = os.path.join(dest_dir, basename)
+    target_path = kwargs.get('target_path', None)
+    if target_path:
+        dest_dir = Path(target_path).parent
+        dest_path = target_path
+    else:
+        target_dir_rel = kwargs.get('override_target', './minified')
+        dest_dir = os.path.join(target_dir_rel, root_no_source)
+        dest_path = os.path.join(dest_dir, basename)
+
     os.makedirs(dest_dir, exist_ok=True)
 
     with open(file_path, 'r') as rf:
@@ -473,6 +501,9 @@ def main_generate_parser():
     parser.add_argument(
         "--single-file",
         help="Specify a single file to transpile")
+    parser.add_argument(
+        "--output",
+        help="Output transpiled file to target path")
     parser.add_argument(
         "--all-files",
         action='store_true',
@@ -520,7 +551,11 @@ def main(args):
             TRANSPILER_ACTIONS,
             transpile_only=args.transpile_only,
             include_paths=flatten(args.include or []),
+            target_path=args.output or None,
         )
 
-if __name__ == '__main__':
+def cli():
     main(main_generate_parser().parse_args())
+
+if __name__ == '__main__':
+    cli()
