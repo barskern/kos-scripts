@@ -1,0 +1,9 @@
+@ksx import ("lib/telemetry").
+
+clearscreen.
+
+print "Try to log telemetry".
+
+log_ship_telemetry.
+
+print "Logged telemetry successfully!".

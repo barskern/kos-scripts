@@ -1,0 +1,16 @@
+@ksx from ("lib/util") import (ship_slug).
+
+local mission_path_archive to "0:/" + ship_slug() + "-update.ks".
+local mission_path_local to "1:/mission.ks".
+
+if homeconnection:isconnected and exists(mission_path_archive) {
+    movepath(mission_path_archive, mission_path_local).
+}
+
+wait until ship:unpacked.
+
+if exists(mission_path_local) {
+    runpath(mission_path_local).
+}
+
+print "Finished executing mission, idling...".

@@ -4,26 +4,29 @@ KSP_SCRIPT_DIR := $(KSP_MAIN_DIR)/Ships/Script
 KOS_SOURCE_DIR := source
 KOS_MINIFY_DIR := minified
 
-KOS_KSX_SRCS := $(wildcard $(KOS_SOURCE_DIR)/**/*.ksx) $(wildcard $(KOS_SOURCE_DIR)/**/**/*.ksx)
-KOS_KS_SRCS := $(wildcard $(KOS_SOURCE_DIR)/**/*.ks) $(wildcard $(KOS_SOURCE_DIR)/**/**/*.ks)
+KOS_ACTION_SRCS := $(wildcard $(KOS_SOURCE_DIR)/actions/*.ksx)
+KOS_LIB_SRCS := $(wildcard $(KOS_SOURCE_DIR)/lib/*.ksx)
+KOS_BOOT_SRCS := $(wildcard $(KOS_SOURCE_DIR)/boot/*.ksx)
 
-KOS_MINIFIED_SRCS := $(patsubst $(KOS_SOURCE_DIR)/%,$(KOS_MINIFY_DIR)/%,$(KOS_KSX_SRCS:.ksx=.ks) $(KOS_KS_SRCS))
+KOS_MINIFIED_BOOT_SRCS := $(patsubst $(KOS_SOURCE_DIR)/%,$(KOS_MINIFY_DIR)/%,$(KOS_BOOT_SRCS:.ksx=.ks))
 
-KSP_SCRIPTS := $(patsubst $(KOS_MINIFY_DIR)/%,$(KSP_SCRIPT_DIR)/%,$(KOS_MINIFIED_SRCS))
+KSP_SCRIPTS := $(patsubst $(KOS_MINIFY_DIR)/%,$(KSP_SCRIPT_DIR)/%,$(KOS_MINIFIED_BOOT_SRCS))
 
 KSX_INCLUDES := -I source/
+
+KSX_FLAGS := --transpile-only --include $(KSX_INCLUDES)
 
 default: $(KSP_SCRIPTS)
 	@echo Compiled and uploaded all scripts in source folder
 .PHONY: default
 
-$(KOS_MINIFY_DIR)/%.ks: $(KOS_SOURCE_DIR)/%.ksx
+$(KOS_MINIFY_DIR)/%.ks: $(KOS_SOURCE_DIR)/%.ksx $(KOS_LIB_SRCS) $(KOS_ACTION_SRCS)
 	@-mkdir "$(@D)"
-	poetry run ksx --include $(KSX_INCLUDES) --single-file $< --output $@
+	poetry run ksx $(KSX_FLAGS) --single-file $< --output $@
 
-$(KOS_MINIFY_DIR)/%.ks: $(KOS_SOURCE_DIR)/%.ks
+$(KOS_MINIFY_DIR)/%.ks: $(KOS_SOURCE_DIR)/%.ks $(KOS_LIB_SRCS) $(KOS_ACTION_SRCS)
 	@-mkdir "$(@D)"
-	poetry run ksx --include $(KSX_INCLUDES) --single-file $< --output $@
+	poetry run ksx $(KSX_FLAGS) --single-file $< --output $@
 
 $(KSP_SCRIPT_DIR)/%.ks: $(KOS_MINIFY_DIR)/%.ks
 # Cannot use @D due to spaces in KSP_SCRIPT_DIR
@@ -71,3 +74,5 @@ push-action:
 
 endif
 .PHONY: push-action push-mission
+
+.SECONDARY:
