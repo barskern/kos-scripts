@@ -44,15 +44,15 @@ function log_ship_telemetry {
     }
 
     log (
-        missiontime
-        + "," + ksc_angle
-        + "," + ship:altitude
-        + "," + ship:apoapsis
-        + "," + pitch
-        + "," + ship:orbit:eccentricity
-        + "," + throttle
-        + "," + ship:deltav:vacuum
-        + "," + ship_ec
-        + "," + liquid_fuel
+        round(missiontime, 2
+        + "," + round(ksc_angle, 2)
+        + "," + round(ship:altitude, 2)
+        + "," + round(ship:apoapsis, 2)
+        + "," + round(pitch, 2)
+        + "," + round(ship:orbit:eccentricity, 2)
+        + "," + round(throttle, 2)
+        + "," + round(ship:deltav:vacuum, 2)
+        + "," + round(ship_ec, 2)
+        + "," + round(liquid_fuel, 2)
     ) to telemetry_path.
 }
