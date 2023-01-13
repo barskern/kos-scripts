@@ -20,7 +20,7 @@ local COAST_TO_GROUND to 8.
 
 local vertical_ascent_altitude to 600.
 local vertical_ascent_speed to 80.
-local target_twr to 1.7.
+local target_twr to 1.64.
 local target_apoapsis to 72000.
 local semimajoraxis_extra to 4000.
 
@@ -33,7 +33,7 @@ ON RCS {
 ON ABORT {
     print "ABORTING!!".
 
-    lock steering to ship:retrograde.
+    lock steering to ship:srfretrograde.
     lock throttle to 0.
 
     wait 0.1.
@@ -261,6 +261,13 @@ until false {
             update_runmode(runmode + 1).
         }
     } else if runmode = COAST_TO_GROUND {
+        if not (defined coast_steering) {
+            print "Coasting down while keeping surface retrograde".
+
+            global coast_steering to ship:srfretrograde.
+            lock steering to coast_steering.
+        }
+
         if not chutessafe {
             chutessafe on.
         }
