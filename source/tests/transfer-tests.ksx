@@ -1,0 +1,33 @@
+@ksx import ("lib/transfer").
+
+clearscreen.
+
+print "Running tests of transfer library".
+
+print "Escape velocity from surface: " + escape_velocity().
+print "Escape velocity from orbit (70km): " + escape_velocity(70000 + ship:body:radius).
+
+
+local hohmann to hohmann_transfer(70000 + ship:body:radius).
+print "Hohmann transfer from surface to 70km: " + hohmann:first + " " + hohmann:second.
+local hohmann_2 to hohmann_transfer(100000 + ship:body:radius, 70000 + ship:body:radius).
+print "Hohmann transfer from 70km to 100km: " + hohmann_2:first + " " + hohmann_2:second.
+local hohmann_3 to hohmann_transfer(70000 + ship:body:radius, 100000 + ship:body:radius).
+print "Hohmann transfer from 100km to 70km: " + hohmann_3:first + " " + hohmann_3:second.
+
+local circle_orbit to createorbit(0, 0, 70000 + kerbin:radius, 0, 0, 0, 0, kerbin).
+print "Deltav to circulize circle orbit: " + deltav_to_circulize(circle_orbit).
+
+
+FROM {local i is 1.} UNTIL i > 8 STEP { set i to i + 1.} DO {
+    local ecc is i / 10.
+
+    local ellipse_orbit to createorbit(0, ecc, 120000 + kerbin:radius, 0, 0, 0, 0, kerbin).
+    print "Deltav to circulize ellipse (ecc=" + ecc + ") orbit at apo: " + deltav_to_circulize(ellipse_orbit).
+    print "Deltav to circulize ellipse (ecc=" + ecc + ") orbit at peri: " + deltav_to_circulize(ellipse_orbit, "periapsis").
+}
+
+FROM {local i is 1.} UNTIL i > 10 STEP { set i to i + 1.} DO {
+    local deltav to ship:deltav:vacuum * (i / 10).
+    print "Estimate burn time (s) for " + i + " deltav: " + estimate_burn_time(i).
+}

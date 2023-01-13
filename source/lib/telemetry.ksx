@@ -1,0 +1,58 @@
+@ksx from ("lib/util") import (ship_slug).
+@ksx from ("lib/geopos") import (ksc_latlng, central_angle).
+
+function log_ship_telemetry {
+    local telemetry_path to "0:/telemetry/" + ship_slug() + ".telemetry.csv".
+
+    if not homeconnection:isconnected {
+        // TODO Maybe buffer some telemetry locally in the future
+        //print "Don't have home connection so doesn't log due to disk size limits..".
+        return.
+    }
+
+    if not exists(telemetry_path) {
+        log "met,ksc_angle,alt,apo,pitch,ecc,throttle,deltav_vac,EC,fuel" to telemetry_path.
+    }
+
+    local pitch to vang(heading(90,0):vector, ship:facing:vector).
+
+    local ship_ec to 0.
+    local liquid_fuel to 0.
+    list resources in all_resources.
+    for res in all_resources {
+        if res:name = "ELECTRICCHARGE" {
+            set ship_ec to ship_ec + res:amount.
+        }
+        if res:name = "LIQUIDFUEL" {
+            set liquid_fuel to liquid_fuel + res:amount.
+        }
+    }
+
+    local ksc_angle to 0.
+    if ship:body:name = "Kerbin" {
+        local ksc_coord to ksc_latlng().
+        local ship_coord to kerbin:geopositionlatlng(ship:latitude, ship:longitude).
+
+        // Angle "away" from KSC, means we can examine ascent profiles no matter the inclination
+        set ksc_angle to central_angle(ksc_coord, ship_coord).
+    }
+
+    if not homeconnection:isconnected {
+        // TODO Maybe buffer some telemetry locally in the future
+        print "Don't have home connection so doesn't log due to disk size limits..".
+        return.
+    }
+
+    log (
+        missiontime
+        + "," + ksc_angle
+        + "," + ship:altitude
+        + "," + ship:apoapsis
+        + "," + pitch
+        + "," + ship:orbit:eccentricity
+        + "," + throttle
+        + "," + ship:deltav:vacuum
+        + "," + ship_ec
+        + "," + liquid_fuel
+    ) to telemetry_path.
+}

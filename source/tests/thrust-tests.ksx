@@ -1,0 +1,60 @@
+@ksx from ("lib/util") import (tee).
+
+clearscreen.
+
+local test_name to "thrust-test-" + round(kuniverse:realtime).
+
+// Assumes single stage rocket with variable thruster(s)
+
+print "Running tests for thrust to throttle ratio, log at " + test_name.
+
+lock steering to heading(90, 90).
+
+local throttle_ to 0.
+lock throttle to throttle_.
+
+stage.
+
+tee("throttle,thrust,max_thrust,mass_flow,max_mass_flow,twr,alt", test_name).
+
+local step is 1 / 15.
+FROM {local i is 0.} UNTIL i > 1 STEP { set i to i + step. } DO {
+
+    set throttle_ to i.
+
+    wait 1.
+
+    local thrust to 0.
+    local max_thrust to 0.
+    local mass_flow to 0.
+    local max_mass_flow to 0.
+    list engines in all_engines.
+    for eng in all_engines {
+        if eng:ignition {
+            set thrust to thrust + eng:thrust.
+            set max_thrust to max_thrust + eng:maxthrust.
+            set mass_flow to mass_flow + eng:massflow.
+            set max_mass_flow to max_mass_flow + eng:maxmassflow.
+        }
+    }
+
+    tee(
+        throttle_ + "," 
+        + thrust + "," 
+        + max_thrust + "," 
+        + mass_flow + "," 
+        + max_mass_flow + "," 
+        + thrust / (ship:mass * (ship:body:mu / (ship:altitude + ship:body:radius)^2)) + "," 
+        + ship:altitude,
+        test_name
+    ).
+}
+
+set throttle_ to 0.
+
+stage.
+
+when (not chutessafe) then {
+    chutessafe on.
+    return (not chutes).
+}

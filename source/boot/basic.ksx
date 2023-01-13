@@ -1,10 +1,11 @@
 @ksx from ("lib/util") import (ship_slug).
+@ksx from ("lib/files") import (try_move).
 
-local mission_path_archive to "0:/" + ship_slug() + "-update.ks".
-local mission_path_local to "1:/mission.ks".
+local mission_path_archive to path("0:/" + ship_slug() + "-update.ks").
+local mission_path_local to path("1:/mission.ks").
 
-if homeconnection:isconnected and exists(mission_path_archive) {
-    movepath(mission_path_archive, mission_path_local).
+if homeconnection:isconnected {
+    try_move(mission_path_archive, mission_path_local).
 }
 
 wait until ship:unpacked.

@@ -1,0 +1,30 @@
+function ship_slug {
+    return ship:name:tolower():replace(" ", "_").
+}
+
+function set_global_runmode {
+    if exists("runmode.ks") {
+        runpath("runmode.ks").
+    } else {
+        global runmode to 0.
+    }
+    print "Started in global runmode " + runmode.
+}
+
+function update_runmode {
+    parameter new_mode.
+    set runmode to new_mode.
+    if exists("runmode.ks") {
+        deletepath("runmode.ks").
+    }
+    log "global runmode to " + new_mode + "." to "runmode.ks".
+    print "Updated runmode to " + new_mode + " and stored to 'runmode.ks'".
+}
+
+function tee {
+    parameter s.
+    parameter filename.
+
+    print s.
+    log s to "0:/logs/" + filename + ".log".
+}

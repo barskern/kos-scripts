@@ -1,0 +1,51 @@
+@ksx from ("lib/util") import (tee).
+@ksx import ("lib/throttle").
+
+clearscreen.
+
+local test_name to "throttle-test-" + round(kuniverse:realtime).
+
+// Assumes single stage rocket with variable thruster(s)
+
+print "Running tests for throttle functions".
+
+lock steering to heading(90, 90).
+
+local throttle_ to 0.
+lock throttle to throttle_.
+
+if ship:stagenum > 1 {
+    stage.
+}
+
+tee("throttle,target_twr,twr,alt", test_name).
+
+local step is 1 / 20.
+FROM {local i is 0.} UNTIL i > 1 STEP { set i to i + step. } DO {
+
+    local target_twr to i * 6.
+    set throttle_ to throttle_for_twr(target_twr).
+
+    wait 1.
+
+    tee(
+        throttle_ + "," 
+        + target_twr + ","
+        + current_twr() + "," 
+        + ship:altitude,
+        test_name
+    ).
+
+    wait 0.1.
+}
+
+set throttle_ to 0.
+
+wait until ship:verticalspeed < 0.
+
+stage.
+
+when (not chutessafe) then {
+    chutessafe on.
+    return (not chutes).
+}

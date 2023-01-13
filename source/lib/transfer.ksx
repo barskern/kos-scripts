@@ -1,0 +1,64 @@
+
+function escape_velocity {
+    parameter r to ship:body:radius.
+    parameter body to ship:body.
+
+    return sqrt((2 * body:mu) / r).
+}
+
+function hohmann_transfer {
+    parameter r_target.
+    parameter r_start to ship:altitude + ship:body:radius.
+    parameter body to ship:body.
+
+    local sma to (r_start + r_target) / 2.
+
+    local first_burn to sqrt(body:mu / r_start) * (sqrt(r_target / sma) - 1).
+    local second_burn to sqrt(body:mu / r_target) * (1 - sqrt(r_start / sma)).
+
+    return lexicon("first", first_burn, "second", second_burn, "total", abs(first_burn) + abs(second_burn)).
+}
+
+function deltav_to_circulize {
+    parameter orbit to ship:orbit.
+    parameter at to "apoapsis". // or "periapsis"
+
+    local peri to orbit:periapsis + orbit:body:radius.
+    local apo to orbit:apoapsis + orbit:body:radius.
+
+    if apo < 0 {
+        print "In hyperbolic orbit, cannot circulize..".
+        return 0.
+    }
+
+    if at = "apoapsis" {
+        return sqrt(orbit:body:mu / apo) * (1 - sqrt(peri / orbit:semimajoraxis)).
+    } else {
+        return sqrt(orbit:body:mu / peri) * (1 - sqrt(apo / orbit:semimajoraxis)).
+    }
+}
+
+function estimate_burn_time {
+    parameter deltav.
+
+    local total_isp to 0.
+    local total_mass_flow to 0.
+
+    list engines in all_engines.
+    for engine in all_engines {
+        // TODO is this good enough for active engines of current stage?
+        if engine:ignition { 
+            set total_isp to total_isp + engine:isp.
+            // Using maxmassflow assumes untweaked engine
+            set total_mass_flow to total_mass_flow + engine:maxmassflow.
+        }
+    }
+
+    if total_isp <= 0 or total_mass_flow <= 0 {
+        print "No engine ISP or mass flow found for ignited engines..".
+        return 0.
+    }
+
+    local ve to constant:g0 * total_isp.
+    return (ship:mass / total_mass_flow) - (ship:mass / (total_mass_flow * constant:e^(deltav / ve))).
+}

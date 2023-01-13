@@ -1,0 +1,69 @@
+function current_twr {
+    local thrust to 0.
+    list engines in all_engines.
+    for eng in all_engines {
+        set thrust to thrust + eng:thrust.
+    }
+
+    local g to ship:body:mu / (ship:altitude + ship:body:radius)^2.
+    return thrust / (ship:mass * g).
+}
+
+function throttle_for_twr {
+    parameter target_twr.
+
+    local g to ship:body:mu / (ship:altitude + ship:body:radius)^2.
+    local target_thrust to target_twr * ship:mass * g.
+
+    local available_trust to 0.
+    list engines in all_engines.
+    for eng in all_engines {
+        // Available thrust gives zero if engine disabled.
+        set available_trust to available_trust + eng:availablethrust.
+    }
+
+    if available_trust > 0 {
+        return min(max(target_thrust / available_trust, 0), 1).
+    } else {
+        return 0.
+    }
+}
+
+// function ship_acceleration {
+//     // NB! Doesn't account for aerodynamic force
+// 
+//     // Forces from thrust from engines
+//     local thrust to V(0,0,0).
+//     list engines in all_engines.
+//     for eng in all_engines {
+//         if eng:ignition {
+//             set thrust to thrust + (eng:facing:vector * eng:thrust).
+//         }
+//     }
+// 
+//     local g_dir to -ship:up:vector.
+//     local g to ship:body:mu / (ship:altitude + ship:body:radius)^2.
+// 
+//     return thrust + g * g_dir.
+// }
+//
+// function init_throttle_pid {
+//     parameter kp to 0.01.
+//     parameter ki to 0.006.
+//     parameter kd to 0.006.
+//     parameter gforce_setpoint to 1.2.
+// 
+//     local throttle_pid to pidloop(kp, ki, kd, 0, 1, 0.01).
+//     set throttle_pid:setpoint to gforce_setpoint.
+// 
+//     return throttle_pid.
+// }
+// 
+// function get_throttle {
+//     parameter throttle_pid.
+// 
+//     local total_acc to ship_acceleration().
+//     local gforce to total_acc:mag / constants:g0.
+// 
+//     return throttle_pid:update(time:seconds, gforce).
+// }

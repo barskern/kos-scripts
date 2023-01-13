@@ -1,0 +1,11 @@
+
+function total_ship_ec {
+    local ship_ec to 0.
+    list resources in all_resources.
+    for res in all_resources {
+        if res:name = "ELECTRICCHARGE" {
+            set ship_ec to ship_ec + res:amount.
+        }
+    }
+    return ship_ec.
+}

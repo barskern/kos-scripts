@@ -1,0 +1,24 @@
+
+function try_move {
+    parameter src.
+    parameter dest.
+
+    if not exists(src) {
+        print "File '" + src + "' doesn't exist".
+        return.
+    }
+
+    local dest_size to 0.
+    if exists(dest) {
+        local dest_file to open(dest).
+        set dest_size to dest_file:size.
+    }
+
+    local src_file to open(src).
+    if src_file:size >= dest:volume:freespace + dest_size {
+        print "Unable to move file '" + src + "' to '" + dest + "' because volume too small, missing " + (src_file:size - dest:volume:freespace) + " bytes".
+        return.
+    }
+
+    movepath(src, dest).
+}

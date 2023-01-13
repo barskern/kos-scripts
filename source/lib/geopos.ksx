@@ -1,0 +1,45 @@
+function dms_to_deg {
+    parameter d.
+    parameter m.
+    parameter s.
+
+    return d + (m / 60) + (s / 3600).
+}
+
+function ksc_latlng {
+    // Fetched from the KSP Wiki (0° 6′ 9″ S, 74° 34′ 31″ W)
+    // Inline dms_to_deg to prevent error when only importing ksc_latlng
+    return kerbin:geopositionlatlng(-0 - 6 / 60 - 9 / 3600, -74 - 34 / 60 - 31 / 3600).
+}
+
+function central_angle {
+    parameter a.
+    parameter b.
+
+    if (
+        (a:lat < -90 or 90 < a:lat) 
+        or (b:lat < -90 or 90 < b:lat) 
+    ) {
+        print "Got invalid lat in central angle: " + a:lat + " or " + b:lat.
+    }
+
+    if (
+        (a:lng < -180 or 180 < a:lng) 
+        or (b:lng < -180 or 180 < b:lng) 
+    ) {
+        print "Got invalid lng in central angle: " + a:lng + " or " + b:lng.
+    }
+
+    local phi_a to min(max(a:lat, -90), 90).
+    local phi_b to min(max(b:lat, -90), 90).
+
+    local theta_a to min(max(a:lng + 180, 0), 360).
+    local theta_b to min(max(b:lng + 180, 0), 360).
+
+    // Taken from Wikipedia
+    // https://en.wikipedia.org/wiki/Angular_distance
+    return arccos(
+        sin(phi_a) * sin(phi_b)
+        + cos(phi_a) * cos(phi_b) * cos(theta_a - theta_b)
+    ).
+}

@@ -1,0 +1,37 @@
+@ksx from ("lib/util") import (tee).
+@ksx from ("lib/geopos") import (ksc_latlng, central_angle).
+
+clearscreen.
+
+local test_name to "latlng-test-" + round(kuniverse:realtime).
+
+print "Running tests for latlnt functions".
+
+local ksc_coord to ksc_latlng().
+
+print "KSC Lat Long: " + ksc_coord:lat + " " + ksc_coord:lng.
+print "KSC Position: " + ksc_coord:position.
+
+local ship_coord to kerbin:geopositionlatlng(ship:latitude, ship:longitude).
+print "Ship Lat Long: " + ship_coord:lat + " " + ship_coord:lng.
+print "Ship Position: " + ship_coord:position.
+
+local offset to central_angle(ksc_coord, ship_coord).
+local offset_two to central_angle(ship_coord, ksc_coord).
+
+print "Ship to KSC central angle      : " + offset.
+print "Ship to KSC central angle (rev): " + offset_two.
+
+function offset_ksc_coord {
+    parameter a to 0.
+    parameter b to 0.
+
+    local random_coord to kerbin:geopositionlatlng(ksc_coord:lat + a, ksc_coord:lng + b).
+    local offset_random to central_angle(random_coord, ksc_coord).
+    print "KSC to (+" + a + " lat, +" + b + "lng) central angle: " + offset_random.
+}
+
+offset_ksc_coord().
+offset_ksc_coord(10).
+offset_ksc_coord(0, 10).
+offset_ksc_coord(10, 10).

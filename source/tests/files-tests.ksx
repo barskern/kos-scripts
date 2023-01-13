@@ -1,0 +1,23 @@
+@ksx from ("lib/util") import (tee).
+@ksx from ("lib/files") import (try_move).
+
+clearscreen.
+
+local test_name to "files-test-" + round(kuniverse:realtime).
+
+print "Running tests for files functions".
+
+local src to path("0:/tests/hello.txt").
+local dest to path("1:/hello.txt").
+
+try_move(src, dest).
+
+log "hello world" to src.
+
+try_move(src, dest).
+
+local dest_file to open(dest).
+
+print "Dest contained: " + dest_file:readall:string.
+
+deletepath(src).

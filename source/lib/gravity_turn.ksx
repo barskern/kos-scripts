@@ -1,0 +1,31 @@
+
+function gravity_turn_pitch {
+    parameter target_apoapsis to 75000.
+    parameter vertical_ascent_altitude to 500.
+
+    parameter ascent_parameter to 2.7.
+    parameter ascent_scaler to 1.35.
+    parameter t_scaler to 0.55.
+    // parameter ascent_parameter to 2.5.
+    // parameter ascent_scaler to 1.4.
+    // parameter t_scaler to 0.4.
+
+    // t is current altitude as percentage of target apoapsis
+    local t to t_scaler * min(max(((ship:altitude - vertical_ascent_altitude) / (target_apoapsis - vertical_ascent_altitude)), 0.0001), 1).
+
+    // Derivative of ascent which looks like t^(s(1-t))
+    // Found through manual searching with desmos calculator and excel
+    local ascent_derivative to (
+        -ascent_parameter 
+        * t^(-ascent_parameter * t + ascent_parameter - 1) 
+        * (t * ln(t) + t - 1)
+    ).
+
+    // Simple quadratic polynomial ascent path
+    //lock ascent_derivative to 2 * (-1) * t + 1.82.
+
+    // Limit pitch to be between some bounds
+    local pitch_angle to min(max(90 - ascent_scaler * arctan2(ascent_derivative, 1), 0), 90).
+
+    return pitch_angle.
+}

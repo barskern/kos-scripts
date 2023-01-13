@@ -45,6 +45,17 @@ telnet:
 	telnet localhost 5410
 .PHONY: telnet
 
+ifneq ($(TEST),)
+TARGET ?= code_tests
+push-tests: $(KOS_MINIFY_DIR)/tests/$(TEST)-tests.ks
+	@echo Pushing test for $(TEST) to vessel(s) $(TARGET)...
+	copy /y "$(subst /,\,$<)" "$(subst /,\,$(subst \,,$(KSP_SCRIPT_DIR))/$(TARGET)-update.ks)"
+else
+push-tests:
+	@echo Missing TEST variable to run 'push-tests' task
+endif
+
+
 ifneq ($(TARGET),)
 
 ifneq ($(MISSION),)
@@ -73,6 +84,6 @@ push-action:
 	@echo Missing TARGET variable to run 'push-action' task
 
 endif
-.PHONY: push-action push-mission
+.PHONY: push-action push-mission push-tests
 
 .SECONDARY:
